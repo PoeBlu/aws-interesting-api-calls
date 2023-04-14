@@ -26,20 +26,17 @@ class Action(object):
 		try: 
 			(self.service, self.api_call) = action_name.split(':')
 		except ValueError:
-			raise ActionLookupError("Service or API Call {} is not valid".format(action_name))
+			raise ActionLookupError(f"Service or API Call {action_name} is not valid")
 		# Load in the rest of the stuff to the namespace
 		try: 
 			self.__dict__.update(database.action_list[self.service][self.api_call])
 		except KeyError as e:
-			raise ActionLookupError("Service or API Call {} is not valid".format(e))
+			raise ActionLookupError(f"Service or API Call {e} is not valid")
 
 	def is_severe(self, severity):
 		'''returns true if this action's severity is greater than the one passed in'''
 		try:
-			if severity_levels[self.Severity] <= severity_levels[severity]:
-				return(True)
-			else:
-				return(False)
+			return severity_levels[self.Severity] <= severity_levels[severity]
 		except KeyError:
 			return(False)
 
@@ -49,7 +46,7 @@ class Action(object):
 
 	# I'm sure this is totally not the right python convention here. 
 	def __repr__(self):
-		return("<InterestingAwsActions:Action {} >".format(self.name))
+		return f"<InterestingAwsActions:Action {self.name} >"
 
 #
 #
@@ -67,15 +64,18 @@ class ActionDatabase(object):
 
 			import requests
 			r = requests.get(filename)
-			if r.status_code == 200:
-				try: 
-					self.action_list = yaml.load(r.content)
-				except yaml.YAMLError as exc:
-					# print(exc)
-					raise ActionFileParseError("Error parsing {}: {}".format(filename, exc).replace('\n', ' '))
-			else:
-				raise ActionFileParseError("Got HTTP Code {} requesting {}".format(r.status_code, filename))
+			if r.status_code != 200:
+				raise ActionFileParseError(
+					f"Got HTTP Code {r.status_code} requesting {filename}"
+				)
 
+			try: 
+				self.action_list = yaml.load(r.content)
+			except yaml.YAMLError as exc:
+					# print(exc)
+				raise ActionFileParseError(
+					f"Error parsing {filename}: {exc}".replace('\n', ' ')
+				)
 		else: # Assume local file
 			try:
 				with open(filename, 'r') as stream:
@@ -83,9 +83,11 @@ class ActionDatabase(object):
 						self.action_list = yaml.load(stream)
 					except yaml.YAMLError as exc:
 						# print(exc)
-						raise ActionFileParseError("Error parsing {}: {}".format(filename, exc).replace('\n', ' '))
+						raise ActionFileParseError(
+							f"Error parsing {filename}: {exc}".replace('\n', ' ')
+						)
 			except IOError as e:
-				raise ActionFileParseError("Error reading {}: {}".format(filename, e))	
+				raise ActionFileParseError(f"Error reading {filename}: {e}")	
 
 	def get_action(self, action_name):
 		"""Returns an Action Object """
@@ -93,17 +95,11 @@ class ActionDatabase(object):
 
 	def get_actions_by_service(self, service):
 		"""Returns a list of Actions fitting the specific service"""
-		output = []
-		for api_call in self.action_list[service]:
-			output.append(service + ":" + api_call)
-		return(output)
+		return [f"{service}:{api_call}" for api_call in self.action_list[service]]
 
 	def get_api_calls_by_service(self, service):
 		"""Returns a list of Actions fitting the specific service"""
-		output = []
-		for api_call in self.action_list[service]:
-			output.append(api_call)
-		return(output)
+		return list(self.action_list[service])
 
 	def get_actions_by_severity(self, severity):
 		"""Return a list of all api_calls where Severity = <severity>"""
@@ -128,10 +124,11 @@ class ActionDatabase(object):
 		output = []
 		for service in self.action_list:
 			# print("Found Service: {}".format(service))
-			for api_call in self.action_list[service]:
-				# print("\tFound Action: {}".format(api_call))
-				if self.action_list[service][api_call][key] == value:
-					output.append(service + ":" + api_call)
+			output.extend(
+				f"{service}:{api_call}"
+				for api_call in self.action_list[service]
+				if self.action_list[service][api_call][key] == value
+			)
 		return(output)
 
 	def list_services(self):
@@ -178,10 +175,7 @@ class ActionDatabase(object):
 						else:
 							api_list[v] = [api_call]
 
-		output = []
-		for k in api_list:
-			output.append(k)
-		return(output)
+		return list(api_list)
 
 
 
@@ -199,19 +193,22 @@ class ActionDatabase(object):
 				return([Action(self,action_wildcard)])
 			else:
 				return([])
-		
+
 		if api_wildcard == "*":
-			for a in self.get_api_calls_by_service(service):
-				output.append(Action(self, service + ":" + a))
+			output.extend(
+				Action(self, f"{service}:{a}")
+				for a in self.get_api_calls_by_service(service)
+			)
 		else:
 			api_wildcard_substr = action_wildcard.replace("*", "")
 			for a in self.get_api_calls_by_service(service):
 				if api_wildcard_substr in a:
 					try:
-						output.append(Action(self, service + ":" + a))
+						output.append(Action(self, f"{service}:{a}"))
 					except ActionLookupError:
-						print("Weird. {} is a substr of {}, yet the Action Lookup failed".format(api_wildcard_substr, a))
-						pass
+						print(
+							f"Weird. {api_wildcard_substr} is a substr of {a}, yet the Action Lookup failed"
+						)
 		# print("found actions for {} of {}".format(action_wildcard, output))
 		return(output)
 
@@ -269,7 +266,7 @@ class PolicySimulator(object):
 			else:
 				return(output)
 		except ClientError as e:
-			print("Error Simulating Policy: {}".format(e))
+			print(f"Error Simulating Policy: {e}")
 			exit(1)
 		
 

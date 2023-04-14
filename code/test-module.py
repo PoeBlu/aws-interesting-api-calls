@@ -22,14 +22,16 @@ except NotImplementedError as e:
     print("Aborting....")
     exit(1)
 
-print("Services: {}".format(action_db.list_services()))
-print("Severities: {}".format(action_db.list_severities()))
-print("Categories: {}".format(action_db.list_categories()))
-print("Risk Types: {}".format(action_db.list_risks()))
+print(f"Services: {action_db.list_services()}")
+print(f"Severities: {action_db.list_severities()}")
+print(f"Categories: {action_db.list_categories()}")
+print(f"Risk Types: {action_db.list_risks()}")
 
-print("All AccessControl Calls: {}".format(action_db.by_category("AccessControl")))
+print(f'All AccessControl Calls: {action_db.by_category("AccessControl")}')
 
-print("API Calls resulting in AccountTakeOver: {}".format(action_db.by_risk("AccountTakeOver")))
+print(
+    f'API Calls resulting in AccountTakeOver: {action_db.by_risk("AccountTakeOver")}'
+)
 
 print("----------------------\n\n")
 
@@ -45,31 +47,35 @@ print("----------------------\n\n")
 
 
 high = action_db.by_severity("high")
-print("Got {} high severity actions".format(len(high)))
+print(f"Got {len(high)} high severity actions")
 for name in high:
     a = action_db.get_action(name)
-    print("{}\t\t{}".format(name,a.Description))
+    print(f"{name}\t\t{a.Description}")
 print("----------------------\n\n")
 
 
 ec2 = action_db.by_service('ec2')
-print("Got {} ec2 actions".format(len(ec2)))
+print(f"Got {len(ec2)} ec2 actions")
 for name in ec2:
     a = action_db.get_action(name)
-    print("{}\t\t{}".format(name,a.Description))
+    print(f"{name}\t\t{a.Description}")
 
 print("----------------------\n\n")
 print("Summary Report:")
 for service in action_db.list_services():
-    print("Service {} has {} actions".format(service, len(action_db.by_service(service))))
+    print(f"Service {service} has {len(action_db.by_service(service))} actions")
 
 for severity in action_db.list_severities():
-    print("Severity {} has {} actions".format(severity, len(action_db.by_severity(severity))))
+    print(
+        f"Severity {severity} has {len(action_db.by_severity(severity))} actions"
+    )
 
 for category in action_db.list_categories():
-    print("Category {} has {} actions".format(category, len(action_db.by_category(category))))
+    print(
+        f"Category {category} has {len(action_db.by_category(category))} actions"
+    )
 
 for risk in action_db.list_risks():
-    print("Risk {} has {} actions".format(risk, len(action_db.by_risk(risk))))
+    print(f"Risk {risk} has {len(action_db.by_risk(risk))} actions")
 
 
